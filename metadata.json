@@ -1,0 +1,6 @@
+{
+  "name": "Trace/Run/Event 音频调试控制台",
+  "description": "用于测试和观测音频、ASR、LLM、TTS 和状态机的单体 Web 调试控制台。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
