@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { usePrompts } from '../context/PromptContext';
 import { Mic, Send, Volume2, Activity, Play, StopCircle, RefreshCw } from 'lucide-react';
+import { generateSpeech, playPCMAudio } from '../services/ttsService';
 
 interface ChatMessage {
   id: string;
@@ -12,7 +13,7 @@ interface ChatMessage {
 }
 
 export function TestingPanel() {
-  const { modules, chainConfig } = usePrompts();
+  const { modules, chainConfig, modelConfig } = usePrompts();
   const [selectedModule, setSelectedModule] = useState<string>('full-chain');
   const [interactionMode, setInteractionMode] = useState<'public_chat' | 'on_mic'>('on_mic');
   const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
@@ -32,7 +33,7 @@ export function TestingPanel() {
     if (!userInput.trim() || isProcessing) return;
 
     const actualInputMode = interactionMode === 'public_chat' ? 'text' : inputMode;
-    const actualOutputMode = interactionMode === 'public_chat' ? 'text_only' : outputMode;
+    const actualOutputMode = outputMode;
 
     const newMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -128,10 +129,24 @@ export function TestingPanel() {
               ));
             } else {
               clearInterval(resInterval);
-              setIsProcessing(false);
-              setMessages(prev => prev.map(msg => 
-                msg.id === responseId ? { ...msg, isStreaming: false } : msg
-              ));
+              
+              if (actualOutputMode === 'text_tts') {
+                // Trigger real TTS
+                generateSpeech(finalResponseText, modelConfig.voice).then((audioBase64) => {
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === responseId ? { ...msg, isStreaming: false } : msg
+                  ));
+                  setIsProcessing(false);
+                  if (audioBase64) {
+                    playPCMAudio(audioBase64);
+                  }
+                });
+              } else {
+                setMessages(prev => prev.map(msg => 
+                  msg.id === responseId ? { ...msg, isStreaming: false } : msg
+                ));
+                setIsProcessing(false);
+              }
             }
           }, 30);
         }
@@ -189,44 +204,42 @@ export function TestingPanel() {
           </div>
 
           {interactionMode === 'on_mic' && (
-            <>
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">输入方式 (Input Mode)</label>
-                <div className="flex bg-slate-100 p-1 border border-slate-200">
-                  <button 
-                    onClick={() => setInputMode('text')}
-                    className={`flex-1 text-xs py-1.5 transition-colors ${inputMode === 'text' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    文字输入 (Text)
-                  </button>
-                  <button 
-                    onClick={() => setInputMode('voice')}
-                    className={`flex-1 text-xs py-1.5 transition-colors ${inputMode === 'voice' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    语音输入 (ASR)
-                  </button>
-                </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">输入方式 (Input Mode)</label>
+              <div className="flex bg-slate-100 p-1 border border-slate-200">
+                <button 
+                  onClick={() => setInputMode('text')}
+                  className={`flex-1 text-xs py-1.5 transition-colors ${inputMode === 'text' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  文字输入 (Text)
+                </button>
+                <button 
+                  onClick={() => setInputMode('voice')}
+                  className={`flex-1 text-xs py-1.5 transition-colors ${inputMode === 'voice' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  语音输入 (ASR)
+                </button>
               </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">输出方式 (Output Mode)</label>
-                <div className="flex bg-slate-100 p-1 border border-slate-200">
-                  <button 
-                    onClick={() => setOutputMode('text_tts')}
-                    className={`flex-1 text-xs py-1.5 transition-colors ${outputMode === 'text_tts' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    文 + 语音 (TTS)
-                  </button>
-                  <button 
-                    onClick={() => setOutputMode('text_only')}
-                    className={`flex-1 text-xs py-1.5 transition-colors ${outputMode === 'text_only' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    纯文字
-                  </button>
-                </div>
-              </div>
-            </>
+            </div>
           )}
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">输出方式 (Output Mode)</label>
+            <div className="flex bg-slate-100 p-1 border border-slate-200">
+              <button 
+                onClick={() => setOutputMode('text_tts')}
+                className={`flex-1 text-xs py-1.5 transition-colors ${outputMode === 'text_tts' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                文 + 语音 (TTS)
+              </button>
+              <button 
+                onClick={() => setOutputMode('text_only')}
+                className={`flex-1 text-xs py-1.5 transition-colors ${outputMode === 'text_only' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                纯文字
+              </button>
+            </div>
+          </div>
 
           <hr className="border-slate-200" />
 

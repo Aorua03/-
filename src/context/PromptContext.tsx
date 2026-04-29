@@ -5,11 +5,21 @@ export interface ChainConfig {
   [moduleId: string]: string; // moduleId -> versionId
 }
 
+export interface ModelConfig {
+  asr: string;
+  llm: string;
+  tts: string;
+  voice: string;
+  rtc: string;
+}
+
 interface PromptContextType {
   modules: PromptModule[];
   setModules: React.Dispatch<React.SetStateAction<PromptModule[]>>;
   chainConfig: ChainConfig;
   setChainConfig: React.Dispatch<React.SetStateAction<ChainConfig>>;
+  modelConfig: ModelConfig;
+  setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
 }
 
 export const PromptContext = createContext<PromptContextType | undefined>(undefined);
@@ -33,6 +43,18 @@ export function PromptProvider({ children }: { children: ReactNode }) {
     return defaultChain;
   });
 
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
+    const saved = localStorage.getItem('app_model_config');
+    if (saved) return JSON.parse(saved);
+    return {
+      asr: 'asr-basic',
+      llm: 'llm-basic',
+      tts: 'tts-basic',
+      voice: 'voice-peach',
+      rtc: 'rtc-basic',
+    };
+  });
+
   useEffect(() => {
     localStorage.setItem('app_modules', JSON.stringify(modules));
   }, [modules]);
@@ -41,8 +63,12 @@ export function PromptProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('app_chain_config', JSON.stringify(chainConfig));
   }, [chainConfig]);
 
+  useEffect(() => {
+    localStorage.setItem('app_model_config', JSON.stringify(modelConfig));
+  }, [modelConfig]);
+
   return (
-    <PromptContext.Provider value={{ modules, setModules, chainConfig, setChainConfig }}>
+    <PromptContext.Provider value={{ modules, setModules, chainConfig, setChainConfig, modelConfig, setModelConfig }}>
       {children}
     </PromptContext.Provider>
   );

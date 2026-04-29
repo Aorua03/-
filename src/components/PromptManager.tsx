@@ -191,7 +191,7 @@ export function PromptManager() {
                 value={activeModule.name}
                 onChange={(e) => updateModuleName(e.target.value)}
                 className="text-lg font-semibold text-slate-900 bg-transparent border border-transparent hover:border-slate-300 focus:outline-none focus:border-blue-500 px-2 py-1 w-1/2"
-                placeholder="模块名称"
+                placeholder="组别名称"
               />
               <div className="flex items-center gap-3">
                 {savedStatus && (
@@ -228,7 +228,7 @@ export function PromptManager() {
             <div className="flex-1 p-6 relative flex flex-col">
               <div className="bg-slate-50 border border-slate-200 p-4 mb-4 flex flex-col gap-3 text-sm text-slate-800 shrink-0">
                 <div className="flex flex-col gap-1">
-                  <label className="font-bold opacity-70 text-xs">当前版本提示词名称：</label>
+                  <label className="font-bold opacity-70 text-xs">模块名称：</label>
                   <input
                     type="text"
                     value={activeVersion.name}

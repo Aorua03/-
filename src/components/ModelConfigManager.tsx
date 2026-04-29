@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Settings, Cpu, Mic, Volume2, Radio, Check } from 'lucide-react';
+import { usePrompts } from '../context/PromptContext';
 
 interface ModelOption {
   id: string;
@@ -69,15 +69,9 @@ const configModules: ComponentConfig[] = [
 ];
 
 export function ModelConfigManager() {
-  const [selectedModels, setSelectedModels] = useState<Record<string, string>>({
-    asr: 'asr-basic',
-    llm: 'llm-basic',
-    tts: 'tts-basic',
-    voice: 'voice-peach',
-    rtc: 'rtc-basic',
-  });
+  const { modelConfig: selectedModels, setModelConfig: setSelectedModels } = usePrompts();
 
-  const handleSelect = (moduleId: string, optionId: string) => {
+  const handleSelect = (moduleId: keyof typeof selectedModels, optionId: string) => {
     setSelectedModels(prev => ({
       ...prev,
       [moduleId]: optionId
@@ -100,7 +94,7 @@ export function ModelConfigManager() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {configModules.map((module) => {
             const Icon = module.icon;
-            const selectedId = selectedModels[module.id];
+            const selectedId = (selectedModels as any)[module.id];
 
             return (
               <div key={module.id} className="bg-white border border-slate-300 flex flex-col">
@@ -117,7 +111,7 @@ export function ModelConfigManager() {
                     return (
                       <div 
                         key={option.id}
-                        onClick={() => handleSelect(module.id, option.id)}
+                        onClick={() => handleSelect(module.id as any, option.id)}
                         className={`relative border p-3 cursor-pointer transition-colors ${
                           isSelected 
                             ? 'border-blue-600 bg-blue-50' 
